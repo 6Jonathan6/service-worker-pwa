@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible"
+        content="ie=edge">
+    <title>PWA</title>
+</head>
+
+<body>
+    <h1>¿Estoy en línea?</h1>
+    <p id="answer"></p>
+    <script>
+        (function online() {
+            let isOnline = ("onLine" in navigator) ? navigator.onLine : true
+            document.addEventListener("DOMContentLoaded", ready, false)
+            const p = document.getElementById('answer')
+            let usingSW = ("serviceWorker" in navigator)
+            let swRegistration
+            let svcworker
+            initServiceWorker().catch(console.error)
+            function ready() {
+                if (!isOnline) {
+                    p.innerHTML = "No"
+                } else {
+                    p.innerHTML = "Si"
+                }
+                window.addEventListener("online", function online() {
+                    p.innerHTML = "Si"
+                    isOnline = true
+                })
+                window.addEventListener("offline", function offline() {
+                    p.innerHTML = "No"
+                    isOnline = false
+                })
+            }
+            async function initServiceWorker() {
+                //always the path has to be /sw.js in other case it wont has access to requests 
+                //Use server redirect something like /js/sw.js to /sw.js
+                swRegistration = await navigator.serviceWorker.register("/sw.js", {
+                    updateViaCache: "none"
+                })
+                //waiting to older sw to die
+                //skip waiting state  to kill immediately older sw
+                //browser every reload checks for a new service worker
+                svcworker = swRegistration.installing || swRegistration.waiting || swRegistration.active
+                //a sw is taking control of the page
+                navigator.serviceWorker.addEventListener("controllerchange", function onController() {
+                    svcworker = navigator.serviceWorker.controller
+                })
+            }
+        })()
+    </script>
+</body>
+
+</html>
