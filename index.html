@@ -13,6 +13,7 @@
 <body>
     <h1>¿Estoy en línea?</h1>
     <p id="answer"></p>
+    <img src="/images/homer.png">
     <script>
         (function online() {
             let isOnline = ("onLine" in navigator) ? navigator.onLine : true
@@ -31,10 +32,12 @@
                 window.addEventListener("online", function online() {
                     p.innerHTML = "Si"
                     isOnline = true
+                    sendStatusUpdate()
                 })
                 window.addEventListener("offline", function offline() {
                     p.innerHTML = "No"
                     isOnline = false
+                    sendStatusUpdate()
                 })
             }
             async function initServiceWorker() {
@@ -50,7 +53,30 @@
                 //a sw is taking control of the page
                 navigator.serviceWorker.addEventListener("controllerchange", function onController() {
                     svcworker = navigator.serviceWorker.controller
+                    sendStatusUpdate(svcworker)
                 })
+                navigator.serviceWorker.addEventListener('message', onSWMessage)
+            }
+            function onSWMessage(evt) {
+                const { data } = evt
+                if (data.requestStatusUpdate) {
+                    console.log('Received status update from service worker')
+                    sendStatusUpdate(evt.ports && evt.ports[0])
+                }
+            }
+            function sendStatusUpdate(target) {
+                sendSWMessage({ statusUpdate: { isOnline } }, target)
+            }
+            async function sendSWMessage(msg, target) {
+                if (target) {
+                    target.postMessage(msg)
+                }
+                else if (svcworker) {
+                    svcworker.postMessage(msg)
+                }
+                else {
+                    navigator.serviceWorker.controller.postMessage(msg)
+                }
             }
         })()
     </script>
